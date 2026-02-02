@@ -4,13 +4,23 @@ import pytest
 @pytest.fixture()
 def valid_date_1() -> str:
     """Правильный форматы данных"""
-    return "2024-03-11T02:26:18.671407"
+    return "2024-03-11T05:26:18.671407"
 
 
 @pytest.fixture()
 def valid_date_2() -> str:
     """Правильный форматы данных"""
-    return "2024-03-11T23:59:59"
+    return "2024-03-11T12:59:59"
+
+@pytest.fixture()
+def valid_date_3() -> str:
+    """Правильный форматы данных"""
+    return "2024-03-11T19:59:59"
+
+@pytest.fixture()
+def valid_date_4() -> str:
+    """Правильный форматы данных"""
+    return "2024-03-11T00:59:59"
 
 
 @pytest.fixture()

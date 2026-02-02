@@ -13,8 +13,22 @@ def period_of_time(date_string: str) -> str:
         return "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
 
 
-def hello() -> str:
+def hello(date_string: str) -> str:
     """Функция, которая получает на вход дату и возвращает приветствие."""
+    try:
+        date_object = parser.parse(date_string)
+        date_object_new = datetime.strftime(date_object, "%H")
+        hour: int = int(date_object_new)
+        if 5 <= hour < 12:
+            return "Доброе утро"
+        elif 12 <= hour < 18:
+            return "Добрый день"
+        elif 18 <= hour < 23:
+            return "Добрый вечер"
+        else:
+            return "Доброй ночи"
+    except (ValueError, TypeError, OverflowError):
+        return "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
     pass
 
 
