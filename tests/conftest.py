@@ -12,10 +12,12 @@ def valid_date_2() -> str:
     """Правильный форматы данных"""
     return "2024-03-11T12:59:59"
 
+
 @pytest.fixture()
 def valid_date_3() -> str:
     """Правильный форматы данных"""
     return "2024-03-11T19:59:59"
+
 
 @pytest.fixture()
 def valid_date_4() -> str:
