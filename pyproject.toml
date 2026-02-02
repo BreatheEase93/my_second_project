@@ -1,0 +1,46 @@
+[project]
+name = "my-second-project"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Дмитрий Глоба",email = "dima.globa2015@yandex.ru"}
+]
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+]
+
+[tool.poetry]
+packages = [{include = "my_second_project", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "flake8 (>=7.3.0,<8.0.0)",
+    "pyright (>=1.1.408,<2.0.0)",
+    "black (>=26.1.0,<27.0.0)",
+    "isort (>=7.0.0,<8.0.0)",
+    "pytest (>=9.0.2,<10.0.0)",
+    "mypy (>=1.19.1,<2.0.0)"
+]
+
+[tool.mypy]
+disallow_untyped_defs = true
+warn_return_any = true
+exclude = ['venv', 'tests']
+
+[tool.black]
+line-length = 119
+exclude = '.git'
+
+[tool.isort]
+line_length = 119
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+include = ["src"]
+exclude = ["tests", "**/__pycache__", "venv", ".venv"]
