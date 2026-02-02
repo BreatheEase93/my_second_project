@@ -1,4 +1,7 @@
 from datetime import datetime
+from typing import List, Any, Hashable, Dict
+
+import pandas as pd
 
 from dateutil import parser
 
@@ -32,9 +35,36 @@ def hello(date_string: str) -> str:
     pass
 
 
-def information_on_cards():
-    """Функция, которая получает на вход 2 даты и возвращает список трат по каждой карте и кэшбэк."""
-    pass
+
+def read_transactions_from_excel(file_xlsx: str) -> list[dict[Hashable, Any]]:
+    """Функция, которая принимает на вход путь до xlsx-файла и
+    возвращает список словарей с данными о финансовых транзакциях."""
+    try:
+        df = pd.read_excel(file_xlsx)
+        transactions = df.to_dict(orient="records")
+        return transactions
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Файл '{file_xlsx}' не найден.")
+    except Exception as e:
+        raise Exception(f"Ошибка при обработке Excel-файла: {e}")
+
+
+def information_on_transactions(data_for: str, data_to:str, list_transactions: List[dict[Hashable, Any]] )->List[Dict]:
+    """Функция, которая получает на вход 2 даты и список, а возвращает список трат за период."""
+    new_list_transactions: List[Dict] = []
+    date_obj_1 = parser.parse(data_for)
+    date_obj_3 = parser.parse(data_to)
+    for transactions in list_transactions:
+        data: str = transactions["Дата платежа"]
+        date_obj_2 = parser.parse(data)
+        if date_obj_1 <= date_obj_2 <= date_obj_3:
+            new_list_transactions.append({
+            "date": transactions["Дата платежа"],
+            "amount": transactions["Сумма платежа"],
+            "category": transactions["Категория"],
+            "description": transactions["Описание"]})
+    return new_list_transactions
+
 
 
 def top_5_transactions():
@@ -50,3 +80,9 @@ def exchange_rates():
 def share_price():
     """Функция, которая выводит стоимость акций, настройки в файле user_settings.json."""
     pass
+
+
+my_list = read_transactions_from_excel(r"C:\Users\Dima\my_second_project\Data\operations.xlsx")
+data = period_of_time("10.12.2021")
+result = information_on_transactions("10.12.2021",data,my_list)
+print(result)

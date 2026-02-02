@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 
 
@@ -53,3 +55,15 @@ def empty_list() -> list:
 def empty_number() -> None:
     """Полное отсутствие значения"""
     return None
+
+@pytest.fixture()
+def xlsx_file() -> str:
+    """Путь файла transactions_excel.xlsx"""
+    return "data/transactions_excel.xlsx"
+
+
+@pytest.fixture()
+def mock_xlsx_response():
+    """Фикстура для мока ответа от xlsx файла"""
+    mock_df = Mock()
+    return mock_df
