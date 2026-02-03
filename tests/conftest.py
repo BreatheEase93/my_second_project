@@ -1,3 +1,4 @@
+import json
 from unittest.mock import Mock
 
 import pytest
@@ -192,3 +193,14 @@ def less_than_5_transactions():
         {"date": "2024-03-02", "amount": 500, "category": "shopping", "description": "clothes"},
         {"date": "2024-03-03", "amount": 1000, "category": "rent", "description": "apartment"},
     ]
+
+
+@pytest.fixture
+def mock_settings():
+    return json.dumps({"user_currencies": ["USD", "EUR", "RUB"]})
+
+
+@pytest.fixture
+def api_key(monkeypatch):
+    monkeypatch.setenv("api_key", "test_key")
+    return "test_key"

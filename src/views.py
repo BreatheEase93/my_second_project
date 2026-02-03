@@ -1,8 +1,12 @@
+import json
+import os
 from datetime import datetime
 from typing import Any, Dict, Hashable, List
 
 import pandas as pd
+import requests
 from dateutil import parser
+from dotenv import load_dotenv
 
 
 def period_of_time(date_string: str) -> str:
@@ -127,17 +131,34 @@ def top_5_transactions(list_transactions: list[dict]) -> list[dict]:
     return my_list
 
 
-def exchange_rates():
+load_dotenv("../.env")
+
+
+def exchange_rates() -> List[Dict]:
     """Функция, которая выводит курс валют, настройки в файле user_settings.json."""
-    pass
+
+    with open(r"..\user_settings.json", "r") as f:
+        currencies = json.load(f).get("user_currencies", [])
+
+    api_key = os.getenv("api_key")
+    if not api_key:
+        raise ValueError("API ключ не найден")
+
+    pairs = [f"{c}RUB" for c in currencies if c != "RUB"]
+    if not pairs:
+        return []
+
+    params = {'get': 'rates', 'pairs': ",".join(pairs), 'key': api_key}
+    data = requests.get("https://currate.ru/api/", params=params, timeout=10).json()
+
+    if data.get('status') != 200:
+        raise Exception(f"API ошибка: {data.get('message', 'Unknown')}")
+
+    return [
+        {'currency': pair[:3], 'rate': float(rate)} for pair, rate in data.get('data', {}).items() if len(pair) >= 6
+    ]
 
 
-def share_price():
+def share_price() -> list[Dict]:
     """Функция, которая выводит стоимость акций, настройки в файле user_settings.json."""
     pass
-
-
-# my_list = read_transactions_from_excel(r"..\Data\operations.xlsx")
-# data = period_of_time("2021-03-01T02:26:18.671407")
-# result = information_on_transactions("2021-03-01T02:26:18.671407", "2021-03-15T02:26:18.671407", my_list)
-# print(result)

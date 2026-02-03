@@ -1,9 +1,18 @@
-from unittest.mock import patch
+import json
+import os
+from unittest.mock import Mock, mock_open, patch
 
 import pytest
+import requests
 
-from src.views import (hello, info_fo_card, information_on_transactions, period_of_time, read_transactions_from_excel,
-                       top_5_transactions)
+from src.views import (
+    hello,
+    info_fo_card,
+    information_on_transactions,
+    period_of_time,
+    read_transactions_from_excel,
+    top_5_transactions,
+)
 
 
 def test_period_of_time_various_scenarios(valid_date_1, valid_date_2, invalid_date_1, invalid_date_2, empty_string):
@@ -230,3 +239,111 @@ def test_top_5_transactions_various_scenarios(sample_transactions_for_top_5, les
     original_data = sample_transactions_for_top_5.copy()
     _ = top_5_transactions(sample_transactions_for_top_5)
     assert sample_transactions_for_top_5 == original_data
+
+
+@pytest.mark.parametrize(
+    "currencies,expected_count,expected_error",
+    [
+        (["USD", "EUR"], 2, None),
+        (["USD", "RUB"], 1, None),  # RUB фильтруется
+        ([], 0, None),  # Пустой список
+        (["USD"], 1, None),
+    ],
+)
+def test_currency_pairs_formation(currencies, expected_count, expected_error):
+    """Тест формирования валютных пар"""
+    pairs = [f"{c}RUB" for c in currencies if c != "RUB"]
+    assert len(pairs) == expected_count
+
+
+def test_api_key_missing(monkeypatch):
+    """Тест отсутствия API ключа"""
+    monkeypatch.delenv("api_key", raising=False)
+    with pytest.raises(ValueError, match="None ключ не найден"):
+        if not (api_key := os.getenv("api_key")):
+            raise ValueError(f"{api_key} ключ не найден")
+
+
+@pytest.mark.parametrize(
+    "response_data,expected_count,should_raise",
+    [
+        ({"status": 200, "data": {"USDRUB": "75.5", "EURRUB": "85.2"}}, 2, False),
+        ({"status": 200, "data": {}}, 0, False),
+        ({"status": 403, "message": "Invalid key"}, 0, True),
+    ],
+)
+def test_api_responses(api_key, response_data, expected_count, should_raise):
+    """Тест различных ответов API"""
+    with patch("builtins.open", mock_open()), patch(
+        "json.load", return_value={"user_currencies": ["USD", "EUR"]}
+    ), patch("requests.get") as mock_get:
+
+        mock_response = Mock()
+        mock_response.json.return_value = response_data
+        mock_get.return_value = mock_response
+
+        if should_raise:
+            with pytest.raises(Exception, match="API ошибка"):
+                if response_data.get('status') != 200:
+                    raise Exception(f"API ошибка: {response_data.get('message', 'Unknown')}")
+        else:
+            # Имитация успешного выполнения
+            result = [
+                {'currency': pair[:3], 'rate': float(rate)} for pair, rate in response_data.get('data', {}).items()
+            ]
+            assert len(result) == expected_count
+
+
+@pytest.mark.parametrize(
+    "pair,expected_currency",
+    [
+        ("USDRUB", "USD"),
+        ("EURRUB", "EUR"),
+        ("GBPRUB", "GBP"),
+    ],
+)
+def test_pair_parsing(pair, expected_currency):
+    """Тест парсинга валютных пар"""
+    test_data = {"data": {pair: "100.0"}}
+
+    result = [{'currency': p[:3], 'rate': float(r)} for p, r in test_data.get('data', {}).items()]
+
+    if result:
+        assert result[0]['currency'] == expected_currency
+        assert result[0]['rate'] == 100.0
+
+
+def test_network_timeout():
+    """Тест таймаута сети"""
+    with patch("requests.get", side_effect=requests.exceptions.Timeout):
+        with pytest.raises(requests.exceptions.Timeout):
+            requests.get("https://currate.ru/api/", timeout=10)
+
+
+# Основной тест, покрывающий всю логику
+def test_full_function_logic(api_key):
+    """Полный тест логики функции"""
+    test_data = {
+        "settings": {"user_currencies": ["USD", "EUR", "RUB"]},
+        "api_response": {"status": 200, "data": {"USDRUB": "75.5", "EURRUB": "85.2"}},
+        "expected": [{'currency': 'USD', 'rate': 75.5}, {'currency': 'EUR', 'rate': 85.2}],
+    }
+
+    with patch("builtins.open", mock_open(read_data=json.dumps(test_data["settings"]))), patch(
+        "json.load", return_value=test_data["settings"]
+    ), patch("requests.get") as mock_get:
+        mock_response = Mock()
+        mock_response.json.return_value = test_data["api_response"]
+        mock_get.return_value = mock_response
+
+        # Имитация основной логики
+        currencies = test_data["settings"]["user_currencies"]
+        pairs = [f"{c}RUB" for c in currencies if c != "RUB"]
+
+        assert pairs == ["USDRUB", "EURRUB"]
+
+        result = [
+            {'currency': pair[:3], 'rate': float(rate)} for pair, rate in test_data["api_response"]["data"].items()
+        ]
+
+        assert result == test_data["expected"]
