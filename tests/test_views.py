@@ -2,30 +2,71 @@ from unittest.mock import patch
 
 import pytest
 
-from src.views import hello, period_of_time, read_transactions_from_excel
+from src.views import hello, information_on_transactions, period_of_time, read_transactions_from_excel
 
 
-def test_period_of_time(valid_date_1, valid_date_2, invalid_date_1, invalid_date_2, empty_string):
-    """Тест функции period_of_time"""
-    assert period_of_time(valid_date_1) == "1.03.2024"
-    assert period_of_time(valid_date_2) == "1.03.2024"
-    assert period_of_time(invalid_date_1) == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
-    assert period_of_time(invalid_date_2) == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
-    assert period_of_time(empty_string) == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
+def test_period_of_time_various_scenarios(valid_date_1, valid_date_2, invalid_date_1, invalid_date_2, empty_string):
+    """Тест функции форматирования даты period_of_time с различными входными данными"""
+
+    """Тест с корректным форматом даты с временной зоной"""
+    result = period_of_time(valid_date_1)
+    assert result == "01.03.2024"
+
+    """Тест с корректным форматом даты без временной зоны"""
+    result = period_of_time(valid_date_2)
+    assert result == "01.03.2024"
+
+    """Тест с некорректным форматом даты (неправильный разделитель)"""
+    result = period_of_time(invalid_date_1)
+    assert result == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
+
+    """Тест с некорректным форматом даты (неполная дата)"""
+    result = period_of_time(invalid_date_2)
+    assert result == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
+
+    """Тест с пустой строкой"""
+    result = period_of_time(empty_string)
+    assert result == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
 
 
-def test_hello(valid_date_1, valid_date_2, valid_date_3, valid_date_4, invalid_date_1, invalid_date_2, empty_string):
-    """Тест функции period_of_time"""
-    assert hello(valid_date_1) == "Доброе утро"
-    assert hello(valid_date_2) == "Добрый день"
-    assert hello(valid_date_3) == "Добрый вечер"
-    assert hello(valid_date_4) == "Доброй ночи"
-    assert hello(invalid_date_1) == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
-    assert hello(invalid_date_2) == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
-    assert hello(empty_string) == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
+def test_hello_various_scenarios(
+    valid_date_1, valid_date_2, valid_date_3, valid_date_4, invalid_date_1, invalid_date_2, empty_string
+):
+    """Тест функции приветствия hello с различными временами суток и ошибками"""
 
-def test_read_transactions_from_excel_success(xlsx_file: str, mock_xlsx_response):
-    """Тест успешного чтения Excel файла"""
+    """Тест приветствия для утреннего времени (до 12:00)"""
+    result = hello(valid_date_1)
+    assert result == "Доброе утро"
+
+    """Тест приветствия для дневного времени (12:00-18:00)"""
+    result = hello(valid_date_2)
+    assert result == "Добрый день"
+
+    """Тест приветствия для вечернего времени (18:00-22:00)"""
+    result = hello(valid_date_3)
+    assert result == "Добрый вечер"
+
+    """Тест приветствия для ночного времени (22:00-06:00)"""
+    result = hello(valid_date_4)
+    assert result == "Доброй ночи"
+
+    """Тест обработки некорректного формата даты"""
+    result = hello(invalid_date_1)
+    assert result == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
+
+    """Тест обработки неполной даты"""
+    result = hello(invalid_date_2)
+    assert result == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
+
+    """Тест обработки пустой строки"""
+    result = hello(empty_string)
+    assert result == "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
+
+
+def test_read_transactions_from_excel_various_scenarios(xlsx_file, mock_xlsx_response):
+    """Тесты различных сценариев чтения Excel файла с транзакциями"""
+
+    """Тест успешного чтения файла с корректными данными"""
     mock_df = mock_xlsx_response
     mock_df.to_dict.return_value = [
         {"id": 1, "state": "EXECUTED", "amount": "100.00"},
@@ -38,19 +79,30 @@ def test_read_transactions_from_excel_success(xlsx_file: str, mock_xlsx_response
         assert isinstance(result, list)
         assert len(result) == 2
         assert result[0]["id"] == 1
+        assert result[0]["state"] == "EXECUTED"
+        assert result[0]["amount"] == "100.00"
+        assert result[1]["id"] == 2
+        assert result[1]["state"] == "CANCELED"
+        assert result[1]["amount"] == "200.00"
 
+    """Тест чтения файла без данных (пустой файл)"""
+    mock_df = mock_xlsx_response
+    mock_df.to_dict.return_value = []
 
-def test_read_transactions_from_excel_file_not_found(xlsx_file: str):
-    """Тест обработки отсутствующего Excel файла"""
+    with patch("pandas.read_excel", return_value=mock_df):
+        result = read_transactions_from_excel(xlsx_file)
+
+        assert isinstance(result, list)
+        assert len(result) == 0
+
+    """Тест обработки ошибки при отсутствии файла"""
     with patch("pandas.read_excel", side_effect=FileNotFoundError):
         with pytest.raises(FileNotFoundError) as exc_info:
             read_transactions_from_excel(xlsx_file)
 
         assert f"Файл '{xlsx_file}' не найден." in str(exc_info.value)
 
-
-def test_read_transactions_from_excel_general_exception(xlsx_file: str):
-    """Тест обработки общей ошибки при чтении Excel"""
+    """Тест обработки других ошибок при чтении Excel"""
     error_msg = "Произвольная ошибка Excel"
 
     with patch("pandas.read_excel", side_effect=Exception(error_msg)):
@@ -60,13 +112,37 @@ def test_read_transactions_from_excel_general_exception(xlsx_file: str):
         assert f"Ошибка при обработке Excel-файла: {error_msg}" in str(exc_info.value)
 
 
-def test_read_transactions_from_excel_empty_file(xlsx_file: str, mock_xlsx_response):
-    """Тест чтения пустого Excel файла"""
-    mock_df = mock_xlsx_response
-    mock_df.to_dict.return_value = []
+def test_information_on_transactions_valid_period(
+    valid_date_1, valid_date_4, sample_transactions, transaction_missing_date
+):
+    """Тест с корректным периодом и транзакциями"""
+    result = information_on_transactions("2024-03-01T00:00:00", "2024-03-15T23:59:59", sample_transactions)
 
-    with patch("pandas.read_excel", return_value=mock_df):
-        result = read_transactions_from_excel(xlsx_file)
+    assert isinstance(result, list)
+    assert len(result) == 3
+    assert result[0]["date"] == "01.03.2024"
+    assert result[0]["last_digits"] == "1234****5678"
+    assert result[1]["category"] == "Транспорт"
+    assert result[1]["description"] == "Такси"
+    assert isinstance(result, list)
+    assert len(result) == 3
 
-        assert isinstance(result, list)
-        assert len(result) == 0
+    """Тест что транзакции без номера карты фильтруются"""
+    transactions_with_missing = sample_transactions + [transaction_missing_date]
+    result = information_on_transactions("2024-03-01T00:00:00", "2024-03-15T23:59:59", transactions_with_missing)
+
+    assert isinstance(result, list)
+    assert len(result) == 3
+
+    """Тест когда нет транзакций в указанном периоде"""
+    result = information_on_transactions("2024-04-01T00:00:00", "2024-04-30T23:59:59", sample_transactions)
+
+    assert isinstance(result, list)
+    assert len(result) == 0
+
+    """Тест с граничными датами периода"""
+    result = information_on_transactions("2024-03-05T00:00:00", "2024-03-10T23:59:59", sample_transactions)
+
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert result[0]["date"] == "10.03.2024"
