@@ -109,10 +109,22 @@ def info_fo_card(list_transactions: List[Dict]) -> List[Dict]:
     return my_list
 
 
-def top_5_transactions():
+def top_5_transactions(list_transactions: list[dict]) -> list[dict]:
     """Функция, которая получает на вход список с информацией о транзакциях,
     а возвращает Топ-5 транзакций по сумме платежа."""
-    pass
+    sorted_by_amount: list[dict] = sorted(list_transactions, key=lambda x: x["amount"], reverse=True)
+    top_5 = sorted_by_amount[0:5]
+    my_list: list[dict] = []
+    for transactions in top_5:
+        my_list.append(
+            {
+                "date": transactions["date"],
+                "amount": transactions["amount"],
+                "category": transactions["category"],
+                "description": transactions["description"],
+            }
+        )
+    return my_list
 
 
 def exchange_rates():

@@ -167,3 +167,28 @@ def different_card_formats():
         {"last_digits": "987654****3210", "amount": "200"},
         {"last_digits": "1111****9999", "amount": "300"},
     ]
+
+
+@pytest.fixture
+def sample_transactions_for_top_5():
+    """Фикстура с примером транзакций для тестирования Топ-5"""
+    return [
+        {"date": "2024-03-01", "amount": 100, "category": "food", "description": "lunch"},
+        {"date": "2024-03-02", "amount": 500, "category": "shopping", "description": "clothes"},
+        {"date": "2024-03-03", "amount": 50, "category": "transport", "description": "bus"},
+        {"date": "2024-03-04", "amount": 1000, "category": "rent", "description": "apartment"},
+        {"date": "2024-03-05", "amount": 200, "category": "entertainment", "description": "cinema"},
+        {"date": "2024-03-06", "amount": 300, "category": "food", "description": "groceries"},
+        {"date": "2024-03-07", "amount": 150, "category": "transport", "description": "taxi"},
+        {"date": "2024-03-08", "amount": 700, "category": "electronics", "description": "phone"},
+    ]
+
+
+@pytest.fixture
+def less_than_5_transactions():
+    """Фикстура с менее чем 5 транзакциями"""
+    return [
+        {"date": "2024-03-01", "amount": 100, "category": "food", "description": "lunch"},
+        {"date": "2024-03-02", "amount": 500, "category": "shopping", "description": "clothes"},
+        {"date": "2024-03-03", "amount": 1000, "category": "rent", "description": "apartment"},
+    ]

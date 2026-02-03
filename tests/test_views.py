@@ -2,7 +2,8 @@ from unittest.mock import patch
 
 import pytest
 
-from src.views import hello, info_fo_card, information_on_transactions, period_of_time, read_transactions_from_excel
+from src.views import (hello, info_fo_card, information_on_transactions, period_of_time, read_transactions_from_excel,
+                       top_5_transactions)
 
 
 def test_period_of_time_various_scenarios(valid_date_1, valid_date_2, invalid_date_1, invalid_date_2, empty_string):
@@ -190,3 +191,42 @@ def test_info_fo_card_basic(
     assert result[0]["last_digits"] == ""
     assert result[0]["total_spent"] == 100
     assert result[0]["cashback"] == 1.0
+
+
+def test_top_5_transactions_various_scenarios(sample_transactions_for_top_5, less_than_5_transactions, empty_list):
+    """Тесты различных сценариев функции top_5_transactions"""
+
+    """Тест успешного получения Топ-5 транзакций из полного списка"""
+    result = top_5_transactions(sample_transactions_for_top_5)
+
+    assert isinstance(result, list)
+    assert len(result) == 5
+    assert result[0]["amount"] == 1000
+    assert result[4]["amount"] == 200
+    assert all(result[i]["amount"] >= result[i + 1]["amount"] for i in range(4))
+
+    """Тест, когда транзакций меньше 5"""
+    result = top_5_transactions(less_than_5_transactions)
+
+    assert isinstance(result, list)
+    assert len(result) == 3
+    assert result[0]["amount"] == 1000
+    assert result[2]["amount"] == 100
+
+    """Тест с пустым списком транзакций"""
+    result = top_5_transactions(empty_list)
+
+    assert isinstance(result, list)
+    assert result == []
+    assert len(result) == 0
+
+    """Тесты структуры и целостности данных"""
+
+    result = top_5_transactions(sample_transactions_for_top_5)
+
+    for transaction in result:
+        assert all(key in transaction for key in ["date", "amount", "category", "description"])
+
+    original_data = sample_transactions_for_top_5.copy()
+    _ = top_5_transactions(sample_transactions_for_top_5)
+    assert sample_transactions_for_top_5 == original_data
