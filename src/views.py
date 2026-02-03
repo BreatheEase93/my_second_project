@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime
 from typing import Any, Dict, Hashable, List
@@ -8,14 +9,24 @@ import requests
 from dateutil import parser
 from dotenv import load_dotenv
 
+# Самая простая настройка
+logging.basicConfig(level=logging.INFO)
+
 
 def period_of_time(date_string: str) -> str:
     """Функция, которая получает на вход дату и возвращает первый день месяца."""
     try:
+        logging.info(f"Обрабатываем дату: {date_string}")
+
         date_object = parser.parse(date_string)
         date_object_new = datetime.strftime(date_object, "01.%m.%Y")
-        return str(date_object_new)
-    except (ValueError, TypeError, OverflowError):
+        result = str(date_object_new)
+
+        logging.info(f"Успешно. Результат: {result}")
+        return result
+
+    except (ValueError, TypeError, OverflowError) as e:
+        logging.error(f"Ошибка: {date_string} - {e}")
         return "Неверные данные. Пример: 2024-03-11T02:26:18.671407"
 
 
