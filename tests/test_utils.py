@@ -5,7 +5,7 @@ from unittest.mock import Mock, mock_open, patch
 import pytest
 import requests
 
-from src.views import (hello, info_fo_card, information_on_transactions, period_of_time, read_transactions_from_excel,
+from src.utils import (hello, info_fo_card, information_on_transactions, period_of_time, read_transactions_from_excel,
                        top_5_transactions)
 
 
