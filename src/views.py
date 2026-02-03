@@ -50,7 +50,7 @@ def read_transactions_from_excel(file_xlsx: str) -> list[dict[Hashable, Any]]:
 def information_on_transactions(
     data_from: str, data_to: str, list_transactions: List[Dict[Hashable, Any]]
 ) -> List[Dict]:
-    """Функция, которая получает на вход 2 даты и список, а возвращает информацию о трат за период."""
+    """Функция, которая получает на вход 2 даты и список, а возвращает информацию о тратах за период."""
     new_list_transactions: List[Dict] = []
 
     try:
@@ -89,9 +89,24 @@ def information_on_transactions(
     return new_list_transactions
 
 
-def info_fo_card():
-    """Функция, которая получает на вход список с информацией о транзакциях, возвращает общею сумму расходов."""
-    pass
+def info_fo_card(list_transactions: List[Dict]) -> List[Dict]:
+    """Функция, которая получает на вход список с информацией о транзакциях,
+    а возвращает общую сумму расходов и кэшбэк по картам."""
+
+    my_list: List[Dict] = []
+
+    card_numbers = [transaction['last_digits'] for transaction in list_transactions]
+    unique_cards = set(card_numbers)
+
+    for card in unique_cards:
+        total_spent: int = 0
+        for transaction in list_transactions:
+            if transaction['last_digits'] == card:
+                total_spent += int(transaction["amount"])
+
+        my_list.append({"last_digits": card[-4:], "total_spent": total_spent, "cashback": total_spent / 100})
+
+    return my_list
 
 
 def top_5_transactions():

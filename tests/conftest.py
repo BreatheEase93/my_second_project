@@ -131,3 +131,39 @@ def transaction_missing_card():
         "Категория": "Другое",
         "Описание": "Тестовая транзакция",
     }
+
+
+@pytest.fixture
+def basic_transactions():
+    """Базовый набор транзакций"""
+    return [
+        {"last_digits": "1234****5678", "amount": "1000"},
+        {"last_digits": "1234****5678", "amount": "500"},
+        {"last_digits": "9999****0000", "amount": "2000"},
+    ]
+
+
+@pytest.fixture
+def single_transaction():
+    """Одна транзакция"""
+    return [{"last_digits": "1234****5678", "amount": "100"}]
+
+
+@pytest.fixture
+def mixed_amounts_transactions():
+    """Транзакции с разными суммами"""
+    return [
+        {"last_digits": "1234****5678", "amount": "-100"},
+        {"last_digits": "1234****5678", "amount": "0"},
+        {"last_digits": "1234****5678", "amount": "200"},
+    ]
+
+
+@pytest.fixture
+def different_card_formats():
+    """Транзакции с разными форматами номеров карт"""
+    return [
+        {"last_digits": "1234****5678", "amount": "100"},
+        {"last_digits": "987654****3210", "amount": "200"},
+        {"last_digits": "1111****9999", "amount": "300"},
+    ]

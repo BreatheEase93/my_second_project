@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.views import hello, information_on_transactions, period_of_time, read_transactions_from_excel
+from src.views import hello, info_fo_card, information_on_transactions, period_of_time, read_transactions_from_excel
 
 
 def test_period_of_time_various_scenarios(valid_date_1, valid_date_2, invalid_date_1, invalid_date_2, empty_string):
@@ -146,3 +146,47 @@ def test_information_on_transactions_valid_period(
     assert isinstance(result, list)
     assert len(result) == 1
     assert result[0]["date"] == "10.03.2024"
+
+
+def test_info_fo_card_basic(
+    basic_transactions, empty_list, different_card_formats, single_transaction, mixed_amounts_transactions
+):
+    """Основные тесты"""
+    result = info_fo_card(basic_transactions)
+
+    assert len(result) == 2
+    assert all(k in r for r in result for k in ["last_digits", "total_spent", "cashback"])
+
+    cards_dict = {c["last_digits"]: c for c in result}
+
+    assert cards_dict["5678"]["total_spent"] == 1500
+    assert cards_dict["5678"]["cashback"] == 15.0
+    assert cards_dict["0000"]["total_spent"] == 2000
+    assert cards_dict["0000"]["cashback"] == 20.0
+
+    """Граничные случаи"""
+    assert info_fo_card(empty_list) == []
+
+    result = info_fo_card(single_transaction)
+    assert result[0]["total_spent"] == 100
+    assert result[0]["cashback"] == 1.0
+
+    result = info_fo_card(mixed_amounts_transactions)
+    assert result[0]["total_spent"] == 100
+
+    """Извлечение последних 4 цифр"""
+    result = info_fo_card(different_card_formats)
+    last4_list = [c["last_digits"] for c in result]
+
+    assert set(last4_list) == {"5678", "3210", "9999"}
+
+    """Обработка некорректных данных"""
+    # Без номера карты
+    with pytest.raises(KeyError):
+        info_fo_card([{"amount": "100"}])
+
+    result = info_fo_card([{"last_digits": "", "amount": "100"}])
+    assert len(result) == 1
+    assert result[0]["last_digits"] == ""
+    assert result[0]["total_spent"] == 100
+    assert result[0]["cashback"] == 1.0
