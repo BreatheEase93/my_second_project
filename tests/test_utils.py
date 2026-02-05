@@ -1,12 +1,12 @@
 import json
 import os
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
 import requests
 
 from src.utils import (hello, info_fo_card, information_on_transactions, period_of_time, read_transactions_from_excel,
-                       top_5_transactions)
+                       share_price, top_5_transactions)
 
 
 def test_period_of_time_various_scenarios(valid_date_1, valid_date_2, invalid_date_1, invalid_date_2, empty_string):
@@ -116,9 +116,7 @@ def test_read_transactions_from_excel_various_scenarios(xlsx_file, mock_xlsx_res
         assert f"Ошибка при обработке Excel-файла: {error_msg}" in str(exc_info.value)
 
 
-def test_information_on_transactions_valid_period(
-    valid_date_1, valid_date_4, sample_transactions, transaction_missing_date
-):
+def test_information_on_transactions_valid_period(sample_transactions, transaction_missing_date):
     """Тест с корректным периодом и транзакциями"""
     result = information_on_transactions("2024-03-01T00:00:00", "2024-03-15T23:59:59", sample_transactions)
 
@@ -266,7 +264,7 @@ def test_api_key_missing(monkeypatch):
         ({"status": 403, "message": "Invalid key"}, 0, True),
     ],
 )
-def test_api_responses(api_key, response_data, expected_count, should_raise):
+def test_api_responses(response_data, expected_count, should_raise):
     """Тест различных ответов API"""
     with patch("builtins.open", mock_open()), patch(
         "json.load", return_value={"user_currencies": ["USD", "EUR"]}
@@ -314,8 +312,7 @@ def test_network_timeout():
             requests.get("https://currate.ru/api/", timeout=10)
 
 
-# Основной тест, покрывающий всю логику
-def test_full_function_logic(api_key):
+def test_full_function_logic():
     """Полный тест логики функции"""
     test_data = {
         "settings": {"user_currencies": ["USD", "EUR", "RUB"]},
@@ -341,3 +338,40 @@ def test_full_function_logic(api_key):
         ]
 
         assert result == test_data["expected"]
+
+
+def test_share_price_basic(mock_stock_data):
+    """Базовый тест успешного получения цен"""
+
+    # Настраиваем мок
+    mock_stock_data['Close'].columns = ["AAPL"]
+    mock_stock_data['Close']["AAPL"] = MagicMock()
+    mock_stock_data['Close']["AAPL"].iloc = MagicMock()
+    mock_stock_data['Close']["AAPL"].iloc.__getitem__.return_value = 150.25
+    mock_stock_data['Close'].iloc.__getitem__.return_value = 150.25
+
+    mock_settings = json.dumps({"user_stocks": ["AAPL"]})
+
+    with patch("builtins.open", mock_open(read_data=mock_settings)):
+        with patch("yfinance.download", return_value=mock_stock_data):
+            result = share_price()
+
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert result[0]["stock"] == "AAPL"
+
+    """Тест пустого списка акций"""
+
+    mock_settings = json.dumps({"user_stocks": []})
+
+    with patch("builtins.open", mock_open(read_data=mock_settings)):
+        result = share_price()
+
+    assert result == []
+
+    """Тест ошибки при чтении файла"""
+
+    with patch("builtins.open", side_effect=FileNotFoundError):
+        result = share_price()
+
+    assert result == []

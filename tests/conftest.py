@@ -1,5 +1,5 @@
 import json
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -204,3 +204,12 @@ def mock_settings():
 def api_key(monkeypatch):
     monkeypatch.setenv("api_key", "test_key")
     return "test_key"
+
+
+@pytest.fixture
+def mock_stock_data():
+    """Минимальный мок для данных акций"""
+    mock_data = MagicMock()
+    mock_data.empty = False
+    mock_data['Close'] = MagicMock()
+    return mock_data

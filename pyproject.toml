@@ -32,6 +32,9 @@ dev = [
 disallow_untyped_defs = true
 warn_return_any = true
 exclude = ['venv', 'tests']
+[[tool.mypy.overrides]]
+module = "yfinance"
+ignore_missing_imports = true
 
 [tool.black]
 line-length = 119

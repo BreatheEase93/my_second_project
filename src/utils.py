@@ -6,10 +6,10 @@ from typing import Any, Dict, Hashable, List
 
 import pandas as pd
 import requests
+import yfinance as yf
 from dateutil import parser
 from dotenv import load_dotenv
 
-# Самая простая настройка
 logging.basicConfig(level=logging.INFO)
 
 
@@ -172,4 +172,23 @@ def exchange_rates() -> List[Dict]:
 
 def share_price() -> list[Dict]:
     """Функция, которая выводит стоимость акций, настройки в файле user_settings.json."""
-    pass
+    try:
+        with open(r"..\user_settings.json", "r") as f:
+            currencies = json.load(f).get("user_stocks", [])
+        data = yf.download(currencies, period="1d", progress=False)
+        tickers: List = []
+        for currency in currencies:
+            price = None
+            if len(currencies) == 1:
+                if not data['Close'].empty:
+                    price = float(data['Close'].iloc[-1])
+            elif currency in data['Close'].columns:  # Для нескольких
+                price = float(data['Close'][currency].iloc[-1])
+
+            tickers.append({"stock": currency, "price": round(price, 2) if price is not None else None})
+
+        return tickers
+    except Exception as e:
+        print(f"Ошибка: {e}")
+        return []
+
