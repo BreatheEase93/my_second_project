@@ -1,8 +1,16 @@
 import json
 from typing import Any, Dict, Hashable, List
 
-from src.utils import (exchange_rates, hello, info_fo_card, information_on_transactions, period_of_time,
-                       read_transactions_from_excel, share_price, top_5_transactions)
+from src.utils import (
+    exchange_rates,
+    hello,
+    info_fo_card,
+    information_on_transactions,
+    period_of_time,
+    read_transactions_from_excel,
+    share_price,
+    top_5_transactions,
+)
 
 
 def main(date_string: str) -> str:

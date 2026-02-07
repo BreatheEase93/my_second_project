@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from src.services import calculate_cashback_by_category, get_monthly_cashback_summary
@@ -78,3 +80,20 @@ def test_calculate_cashback_by_category_basic(
     assert len(result) == 1
     assert "" in result[0]
     assert result[0][""] == 100
+
+
+@pytest.mark.parametrize(
+    "transactions,expected_logs",
+    [
+        ([{'category': 'food', 'cashback': '100'}], ["Начало расчета", "Расчет завершен"]),
+        ([{'category': 'food', 'cashback': 'invalid'}], ["Ошибка обработки cashback"]),
+        ([], ["Получено транзакций: 0"]),
+    ],
+)
+def test_cashback_logging(transactions, expected_logs, caplog):
+    """Проверка ключевых логов функции"""
+    caplog.set_level(logging.INFO)
+    calculate_cashback_by_category(transactions)
+    logs = caplog.text
+    for expected in expected_logs:
+        assert expected in logs
