@@ -191,4 +191,3 @@ def share_price() -> list[Dict]:
     except Exception as e:
         print(f"Ошибка: {e}")
         return []
-

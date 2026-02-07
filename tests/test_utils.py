@@ -163,8 +163,8 @@ def test_info_fo_card_basic(
 
     assert cards_dict["5678"]["total_spent"] == 1500
     assert cards_dict["5678"]["cashback"] == 15.0
-    assert cards_dict["0000"]["total_spent"] == 2000
-    assert cards_dict["0000"]["cashback"] == 20.0
+    assert cards_dict["0000"]["total_spent"] == 3000
+    assert cards_dict["0000"]["cashback"] == 30.0
 
     """Граничные случаи"""
     assert info_fo_card(empty_list) == []

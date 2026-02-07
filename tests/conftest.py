@@ -1,6 +1,7 @@
 import json
 from unittest.mock import MagicMock, Mock
 
+import pandas as pd
 import pytest
 
 
@@ -80,8 +81,9 @@ def sample_transactions():
             "Номер карты": "1234****5678",
             "Статус": "SUCCESS",
             "Сумма платежа": "1000.00",
-            "Категория": "Продукты",
+            "Категория": "Супермаркеты",
             "Описание": "Покупка в магазине",
+            "Кэшбэк": 150.0,
         },
         {
             "Дата платежа": "2024-03-05T14:20:00",
@@ -90,6 +92,7 @@ def sample_transactions():
             "Сумма платежа": "2000.00",
             "Категория": "Рестораны",
             "Описание": "Обед в кафе",
+            "Кэшбэк": 200.0,
         },
         {
             "Дата платежа": "2024-03-10T18:45:00",
@@ -98,6 +101,7 @@ def sample_transactions():
             "Сумма платежа": "1500.00",
             "Категория": "Транспорт",
             "Описание": "Такси",
+            "Кэшбэк": 50.0,
         },
         {
             "Дата платежа": "2024-03-15T09:15:00",
@@ -106,6 +110,7 @@ def sample_transactions():
             "Сумма платежа": "3000.00",
             "Категория": "Развлечения",
             "Описание": "Кино",
+            "Кэшбэк": 300.0,
         },
     ]
 
@@ -119,6 +124,7 @@ def transaction_missing_date():
         "Сумма платежа": "500.00",
         "Категория": "Другое",
         "Описание": "Тестовая транзакция",
+        "Кэшбэк": 25.0,
     }
 
 
@@ -138,25 +144,26 @@ def transaction_missing_card():
 def basic_transactions():
     """Базовый набор транзакций"""
     return [
-        {"last_digits": "1234****5678", "amount": "1000"},
-        {"last_digits": "1234****5678", "amount": "500"},
-        {"last_digits": "9999****0000", "amount": "2000"},
+        {"last_digits": "1234****5678", "amount": "1000", "category": "Супермаркеты", "cashback": "150"},
+        {"last_digits": "1234****5678", "amount": "500", "category": "Супермаркеты", "cashback": "75"},
+        {"last_digits": "9999****0000", "amount": "2000", "category": "Транспорт", "cashback": "200"},
+        {"last_digits": "9999****0000", "amount": "1000", "category": "Транспорт", "cashback": "100"},
     ]
 
 
 @pytest.fixture
 def single_transaction():
     """Одна транзакция"""
-    return [{"last_digits": "1234****5678", "amount": "100"}]
+    return [{"last_digits": "1234****5678", "amount": "100", "category": "Продукты", "cashback": "50"}]
 
 
 @pytest.fixture
 def mixed_amounts_transactions():
     """Транзакции с разными суммами"""
     return [
-        {"last_digits": "1234****5678", "amount": "-100"},
-        {"last_digits": "1234****5678", "amount": "0"},
-        {"last_digits": "1234****5678", "amount": "200"},
+        {"last_digits": "1234****5678", "amount": "-100", "category": "Продукты", "cashback": "100"},
+        {"last_digits": "1234****5678", "amount": "0", "category": "Продукты", "cashback": "0"},
+        {"last_digits": "1234****5678", "amount": "200", "category": "Продукты", "cashback": "75"},
     ]
 
 
@@ -164,9 +171,9 @@ def mixed_amounts_transactions():
 def different_card_formats():
     """Транзакции с разными форматами номеров карт"""
     return [
-        {"last_digits": "1234****5678", "amount": "100"},
-        {"last_digits": "987654****3210", "amount": "200"},
-        {"last_digits": "1111****9999", "amount": "300"},
+        {"last_digits": "1234****5678", "amount": "100", "category": "Супермаркеты", "cashback": "15"},
+        {"last_digits": "987654****3210", "amount": "200", "category": "Транспорт", "cashback": "20"},
+        {"last_digits": "1111****9999", "amount": "300", "category": "Рестораны", "cashback": "30"},
     ]
 
 
@@ -213,3 +220,31 @@ def mock_stock_data():
     mock_data.empty = False
     mock_data['Close'] = MagicMock()
     return mock_data
+
+
+@pytest.fixture()
+def transaction_missing_cashback():
+    """Транзакция без кэшбэка (None)"""
+    return {
+        "Дата платежа": "2024-03-20T12:00:00",
+        "Номер карты": "3333****4444",
+        "Статус": "SUCCESS",
+        "Сумма платежа": "700.00",
+        "Категория": "Другое",
+        "Описание": "Тест без кэшбэка",
+        "Кэшбэк": None,
+    }
+
+
+@pytest.fixture()
+def transaction_nan_cashback():
+    """Транзакция с NaN кэшбэком"""
+    return {
+        "Дата платежа": "2024-03-20T12:00:00",
+        "Номер карты": "5555****6666",
+        "Статус": "SUCCESS",
+        "Сумма платежа": "700.00",
+        "Категория": "Другое",
+        "Описание": "Тест с NaN кэшбэком",
+        "Кэшбэк": pd.NA,
+    }
