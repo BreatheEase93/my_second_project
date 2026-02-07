@@ -12,7 +12,7 @@ def get_monthly_cashback_summary(list_transactions: List[Dict[Hashable, Any]], m
     new_list_transactions: List[Dict] = []
 
     try:
-        date_from_obj = datetime.strptime(f"{year}-{month}", "%Y-%m").date()
+        date_from_obj = datetime.strptime(f"{str(year)}-{str(month)}", "%Y-%m").date()
     except ValueError:
         return []
 

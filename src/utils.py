@@ -147,11 +147,13 @@ load_dotenv("../.env")
 
 def exchange_rates() -> List[Dict]:
     """Функция, которая выводит курс валют, настройки в файле user_settings.json."""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, "..", "user_settings.json")
 
-    with open(r"..\user_settings.json", "r") as f:
+    with open(file_path, "r") as f:
         currencies = json.load(f).get("user_currencies", [])
 
-    api_key = os.getenv("api_key")
+    api_key = os.getenv("API_KEY")
     if not api_key:
         raise ValueError("API ключ не найден")
 
@@ -173,7 +175,10 @@ def exchange_rates() -> List[Dict]:
 def share_price() -> list[Dict]:
     """Функция, которая выводит стоимость акций, настройки в файле user_settings.json."""
     try:
-        with open(r"..\user_settings.json", "r") as f:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(current_dir, "..", "user_settings.json")
+
+        with open(file_path, "r") as f:
             currencies = json.load(f).get("user_stocks", [])
         data = yf.download(currencies, period="1d", progress=False)
         tickers: List = []

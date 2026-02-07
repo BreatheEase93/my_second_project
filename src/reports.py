@@ -3,7 +3,10 @@ from datetime import datetime
 from typing import Any, Callable, Optional, TypeVar
 
 import pandas as pd
+from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
+
+from src.utils import read_transactions_from_excel
 
 # Type variable for generic function typing
 F = TypeVar('F', bound=Callable[..., Any])
@@ -33,16 +36,33 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
+def load_transactions_to_dataframe(file_path: str) -> pd.DataFrame:
+    """Загружает транзакции из Excel файла и преобразует в pandas DataFrame"""
+
+    logger.info(f"Загрузка данных из файла: {file_path}")
+    transactions_list = read_transactions_from_excel(file_path)
+
+    if not transactions_list:
+        logger.warning(f"Файл {file_path} пуст или не содержит данных")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(transactions_list)
+
+    logger.info(f"Загружено {len(df)} записей")
+
+    return df
+
+
 def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
     """Функция возвращает траты по заданной категории за последние три месяца (от переданной даты)"""
 
-    logger.info(f"Запуск функции. Категория: {category}, дата: {date}")
+    logger.info(f"Запуск функции. Категория: {category}, дата: {str(date)}")
 
     if date is None:
         end_date = datetime.now()
         logger.info(f"Используем текущую дату: {end_date}")
     else:
-        end_date = datetime.strptime(date, '%Y-%m-%d')
+        end_date = parse(str(date), dayfirst=True)  # dayfirst=True для формата DD.MM.YYYY
         logger.info(f"Используем дату: {end_date}")
 
     start_date = end_date - relativedelta(months=3)
@@ -51,15 +71,17 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
     df = transactions.copy()
     logger.info(f"Входных строк: {len(df)}")
 
-    df['date'] = pd.to_datetime(df['date'])
+    df['Дата платежа'] = pd.to_datetime(df['Дата платежа'], dayfirst=True)
 
-    mask1 = df['date'] >= start_date
-    mask2 = df['date'] <= end_date
-    mask3 = df['category'] == category
+    mask1 = df['Дата платежа'] >= start_date
+    mask2 = df['Дата платежа'] <= end_date
+    mask3 = df['Категория'] == category
+    mask4 = df['Статус'] != "FAILED"
+    mask5 = df['Категория'] is not None
 
-    filtered_df = df[mask1 & mask2 & mask3]
+    filtered_df = df[mask1 & mask2 & mask3 & mask4 & mask5]
     logger.info(f"Найдено транзакций: {len(filtered_df)}")
 
-    result_df = filtered_df.sort_values('date')
+    result_df = filtered_df.sort_values('Дата платежа')
 
     return result_df

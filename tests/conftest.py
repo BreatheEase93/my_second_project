@@ -254,20 +254,21 @@ def transaction_nan_cashback():
 
 @pytest.fixture
 def basic_df():
-    """Обычные данные"""
+    """Базовый DataFrame для тестов"""
     return pd.DataFrame(
         {
-            'date': ['2024-01-15', '2024-02-10', '2024-03-05', '2023-12-20'],
-            'category': ['Еда', 'Еда', 'Транспорт', 'Еда'],
-            'amount': [1000, 1500, 500, 800],
+            'Дата платежа': ['15.01.2024', '10.02.2024', '05.03.2024', '20.12.2023'],
+            'Категория': ['Еда', 'Еда', 'Транспорт', 'Еда'],
+            'Сумма операции': [1000, 1500, 500, 800],
+            'Статус': ['OK', 'OK', 'OK', 'OK'],
         }
     )
 
 
 @pytest.fixture
 def empty_df():
-    """Пустой DF"""
-    return pd.DataFrame(columns=['date', 'category', 'amount'])
+    """Пустой DataFrame"""
+    return pd.DataFrame(columns=['Дата платежа', 'Категория', 'Сумма операции', 'Статус'])
 
 
 @pytest.fixture(autouse=True)

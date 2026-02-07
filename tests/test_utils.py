@@ -5,15 +5,8 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 import pytest
 import requests
 
-from src.utils import (
-    hello,
-    info_fo_card,
-    information_on_transactions,
-    period_of_time,
-    read_transactions_from_excel,
-    share_price,
-    top_5_transactions,
-)
+from src.utils import (hello, info_fo_card, information_on_transactions, period_of_time, read_transactions_from_excel,
+                       share_price, top_5_transactions)
 
 
 def test_period_of_time_various_scenarios(valid_date_1, valid_date_2, invalid_date_1, invalid_date_2, empty_string):

@@ -5,7 +5,7 @@ from unittest.mock import mock_open, patch
 import pandas as pd
 import pytest
 
-from src.reports import report_writer, spending_by_category
+from src.reports import load_transactions_to_dataframe, report_writer, spending_by_category
 
 
 @pytest.mark.parametrize(
@@ -94,32 +94,33 @@ def test_spending_logic():
     """Тест на правильную логику выборки по датам"""
     df = pd.DataFrame(
         {
-            'date': [
-                '2024-01-01',
-                '2024-01-15',
-                '2024-02-01',
-                '2024-02-15',
-                '2024-03-01',
-                '2023-12-01',
-                '2023-11-01',
+            'Дата платежа': [
+                '01.01.2024',
+                '15.01.2024',
+                '01.02.2024',
+                '15.02.2024',
+                '01.03.2024',
+                '01.12.2023',
+                '01.11.2023',
             ],
-            'category': ['Еда'] * 7,
-            'amount': [100] * 7,
+            'Категория': ['Еда'] * 7,
+            'Сумма операции': [100] * 7,
+            'Статус': ['OK'] * 7,
         }
     )
 
-    result = spending_by_category(df, 'Еда', '2024-03-31')
+    result = spending_by_category(df, 'Еда', '31.03.2024')
     assert len(result) == 5
 
-    result = spending_by_category(df, 'Еда', '2024-02-28')
+    result = spending_by_category(df, 'Еда', '28.02.2024')
     assert len(result) == 5
-    assert all(result['date'] >= pd.Timestamp('2023-12-01'))
-    assert all(result['date'] <= pd.Timestamp('2024-02-28'))
+    assert all(result['Дата платежа'] >= pd.Timestamp('2023-12-01'))
+    assert all(result['Дата платежа'] <= pd.Timestamp('2024-02-28'))
 
 
 def test_with_date(basic_df):
     """Работает с указанной датой"""
-    result = spending_by_category(basic_df, 'Еда', '2024-02-28')
+    result = spending_by_category(basic_df, 'Еда', '28.02.2024')
     # За 3 месяца до 28 февраля: декабрь, январь, февраль
     # Попадают: 2023-12-20, 2024-01-15, 2024-02-10
     assert len(result) == 3
@@ -127,20 +128,14 @@ def test_with_date(basic_df):
 
 def test_empty_result(basic_df):
     """Нет трат по категории"""
-    result = spending_by_category(basic_df, 'Несуществующая', '2024-12-31')
+    result = spending_by_category(basic_df, 'Несуществующая', '31.12.2024')
     assert len(result) == 0
 
 
 def test_empty_df(empty_df):
     """Пустой вход"""
-    result = spending_by_category(empty_df, 'Еда', '2024-12-31')
+    result = spending_by_category(empty_df, 'Еда', '31.12.2024')
     assert len(result) == 0
-
-
-def test_bad_date_format(basic_df):
-    """Неправильный формат даты"""
-    with pytest.raises(ValueError):
-        spending_by_category(basic_df, 'Еда', '2024/02/28')
 
 
 def test_null_date(basic_df):
@@ -152,21 +147,28 @@ def test_null_date(basic_df):
 
 def test_sorting(basic_df):
     """Проверка сортировки"""
-    result = spending_by_category(basic_df, 'Еда', '2024-02-28')
-    assert result['date'].is_monotonic_increasing
+    result = spending_by_category(basic_df, 'Еда', '28.02.2024')
+    assert result['Дата платежа'].is_monotonic_increasing
 
 
 def test_boundary_date():
     """Граничная дата 31 марта"""
-    df = pd.DataFrame({'date': ['2024-03-31', '2024-01-01'], 'category': ['Еда', 'Еда'], 'amount': [100, 200]})
-    result = spending_by_category(df, 'Еда', '2024-03-31')
+    df = pd.DataFrame(
+        {
+            'Дата платежа': ['31.03.2024', '01.01.2024'],
+            'Категория': ['Еда', 'Еда'],
+            'Сумма операции': [100, 200],
+            'Статус': ['OK', 'OK'],
+        }
+    )
+    result = spending_by_category(df, 'Еда', '31.03.2024')
     assert len(result) == 2  # Оба попадают
 
 
 def test_logging(basic_df, caplog):
     """Логи пишутся"""
     with caplog.at_level(logging.INFO):
-        spending_by_category(basic_df, 'Еда', '2024-12-31')
+        spending_by_category(basic_df, 'Еда', '31.12.2024')
     assert 'Запуск функции' in caplog.text
     assert 'Найдено транзакций' in caplog.text
 
@@ -174,5 +176,38 @@ def test_logging(basic_df, caplog):
 def test_original_not_changed(basic_df):
     """Исходный DF не меняется"""
     original = basic_df.copy()
-    spending_by_category(basic_df, 'Еда', '2024-12-31')
+    spending_by_category(basic_df, 'Еда', '31.12.2024')
     pd.testing.assert_frame_equal(original, basic_df)
+
+
+def test_load_transactions_to_dataframe_success():
+    """Тест успешной загрузки данных в DataFrame"""
+    # Создаем тестовые данные
+    test_data = [
+        {"Дата платежа": "01.12.2021", "Сумма операции": 100.0, "Категория": "Супермаркеты", "Статус": "OK"},
+        {"Дата платежа": "02.12.2021", "Сумма операции": 200.0, "Категория": "Рестораны", "Статус": "OK"},
+    ]
+
+    # Мокаем функцию read_transactions_from_excel
+    with patch('src.reports.read_transactions_from_excel') as mock_read:
+        mock_read.return_value = test_data
+
+        # Вызываем тестируемую функцию
+        df = load_transactions_to_dataframe("dummy_path.xlsx")
+
+        # Проверяем результаты
+        assert isinstance(df, pd.DataFrame)  # Проверяем тип
+        assert len(df) == 2  # Проверяем количество строк
+        assert list(df.columns) == ["Дата платежа", "Сумма операции", "Категория", "Статус"]  # Проверяем колонки
+
+
+def test_load_transactions_to_dataframe_empty():
+    """Тест загрузки пустых данных"""
+    with patch('src.reports.read_transactions_from_excel') as mock_read:
+        mock_read.return_value = []
+
+        df = load_transactions_to_dataframe("empty_file.xlsx")
+
+        assert isinstance(df, pd.DataFrame)
+        assert df.empty  # Проверяем что DataFrame пустой
+        assert len(df) == 0
