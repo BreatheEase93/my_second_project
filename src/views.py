@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from typing import Any, Dict, Hashable, List
 
 from src.utils import (exchange_rates, hello, info_fo_card, information_on_transactions, period_of_time,
@@ -23,7 +24,7 @@ def main_views(date_string: str) -> str:
     top_5: List[Dict] = top_5_transactions(sorted_transactions)
 
     data = {
-        "greeting": hello(date_string),
+        "greeting": hello(str(datetime.now())),
         "cards": info_card,
         "top_transactions": top_5,
         "currency_rates": exchange_rates(),
